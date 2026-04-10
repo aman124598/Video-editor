@@ -14,6 +14,11 @@ export function AppShell({ workersSupported }: { workersSupported: boolean }) {
   const exportJob = useEditorStore((state) => state.exportJob);
   const project = useEditorStore((state) => state.project);
   const setExportJob = useEditorStore((state) => state.setExportJob);
+  const setPlaying = useEditorStore((state) => state.setPlaying);
+  const nudgePlayhead = useEditorStore((state) => state.nudgePlayhead);
+  const splitSelectedClip = useEditorStore((state) => state.splitSelectedClip);
+  const duplicateSelection = useEditorStore((state) => state.duplicateSelection);
+  const deleteSelection = useEditorStore((state) => state.deleteSelection);
   const [exportOpen, setExportOpen] = useState(false);
   const cancelExportRef = useRef<(() => void) | null>(null);
 
@@ -33,6 +38,44 @@ export function AppShell({ workersSupported }: { workersSupported: boolean }) {
   }, [tickPlayback]);
 
   useEffect(() => () => cancelExportRef.current?.(), []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTypingTarget =
+        target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+
+      if (event.code === 'Space' && !isTypingTarget) {
+        event.preventDefault();
+        setPlaying(!playback.isPlaying);
+        return;
+      }
+
+      if (isTypingTarget) {
+        return;
+      }
+
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault();
+        deleteSelection();
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        nudgePlayhead(-1);
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        nudgePlayhead(1);
+      } else if (event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        splitSelectedClip();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') {
+        event.preventDefault();
+        duplicateSelection();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [deleteSelection, duplicateSelection, nudgePlayhead, playback.isPlaying, setPlaying, splitSelectedClip]);
 
   const handleExport = () => {
     if (!workersSupported) {
@@ -61,8 +104,8 @@ export function AppShell({ workersSupported }: { workersSupported: boolean }) {
     <div className="editor-shell">
       <TransportBar onOpenExport={handleExport} />
       <div className="workspace-grid">
-        <MediaBin />
         <PreviewStage currentTime={playback.currentTime} />
+        <MediaBin />
         <Inspector />
         <Timeline />
       </div>

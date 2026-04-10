@@ -1,83 +1,72 @@
 import { useMemo } from 'react';
-import { formatTime } from '../lib/time';
 import { useEditorStore } from '../store/editorStore';
 
+function ActionButton({
+  children,
+  onClick,
+  accent,
+}: {
+  children: string;
+  onClick?: () => void;
+  accent?: boolean;
+}) {
+  return (
+    <button type="button" className={`toolbar-action ${accent ? 'accent' : ''}`} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
 export function TransportBar({ onOpenExport }: { onOpenExport: () => void }) {
-  const playback = useEditorStore((state) => state.playback);
   const project = useEditorStore((state) => state.project);
   const statusMessage = useEditorStore((state) => state.statusMessage);
   const selectedAssetId = useEditorStore((state) => state.selectedAssetId);
   const setPlayhead = useEditorStore((state) => state.setPlayhead);
-  const setPlaying = useEditorStore((state) => state.setPlaying);
   const splitSelectedClip = useEditorStore((state) => state.splitSelectedClip);
+  const duplicateSelection = useEditorStore((state) => state.duplicateSelection);
   const deleteSelection = useEditorStore((state) => state.deleteSelection);
   const addTextOverlay = useEditorStore((state) => state.addTextOverlay);
   const addImageOverlay = useEditorStore((state) => state.addImageOverlay);
-  const setZoom = useEditorStore((state) => state.setZoom);
-  const zoom = useEditorStore((state) => state.zoom);
+  const updateProjectName = useEditorStore((state) => state.updateProjectName);
 
   const clipCount = useMemo(() => project.clips.length, [project.clips.length]);
 
   return (
-    <header className="transport-bar">
-      <div className="brand-lockup">
-        <span className="brand-badge">B+</span>
+    <header className="transport-bar transport-bar-mock">
+      <div className="brand-lockup compact">
+        <span className="brand-badge">C</span>
         <div>
-          <h1>Blackframe Studio</h1>
-          <p>Single-track WebGPU editor</p>
-        </div>
-      </div>
-
-      <div className="transport-controls">
-        <button type="button" className="button" onClick={() => setPlayhead(0)}>
-          Start
-        </button>
-        <button type="button" className="button accent" onClick={() => setPlaying(!playback.isPlaying)}>
-          {playback.isPlaying ? 'Pause' : 'Play'}
-        </button>
-        <button type="button" className="button" onClick={splitSelectedClip}>
-          Split
-        </button>
-        <button type="button" className="button" onClick={deleteSelection}>
-          Delete
-        </button>
-        <button type="button" className="button" onClick={addTextOverlay}>
-          Text Overlay
-        </button>
-        <button
-          type="button"
-          className="button"
-          onClick={() => {
-            if (selectedAssetId) {
-              addImageOverlay(selectedAssetId);
-            }
-          }}
-        >
-          Image Overlay
-        </button>
-      </div>
-
-      <div className="transport-meta">
-        <div className="time-readout">
-          {formatTime(playback.currentTime)} / {formatTime(project.duration)}
-        </div>
-        <label className="zoom-control">
-          Zoom
           <input
-            type="range"
-            min="60"
-            max="240"
-            step="10"
-            value={zoom}
-            onChange={(event) => setZoom(Number(event.target.value))}
+            className="project-name-input"
+            value={project.name}
+            onChange={(event) => updateProjectName(event.target.value)}
+            aria-label="Project name"
           />
-        </label>
-        <button type="button" className="button accent" onClick={onOpenExport} disabled={clipCount === 0}>
-          Export
-        </button>
+          <p>Always-visible primary actions</p>
+        </div>
       </div>
 
-      <div className="status-strip">{statusMessage}</div>
+      <div className="toolbar-strip">
+        <ActionButton onClick={() => setPlayhead(0)}>Undo</ActionButton>
+        <ActionButton onClick={duplicateSelection}>Redo</ActionButton>
+        <ActionButton>Select</ActionButton>
+        <ActionButton onClick={deleteSelection}>Cut</ActionButton>
+        <ActionButton onClick={splitSelectedClip}>Razor</ActionButton>
+        <ActionButton onClick={splitSelectedClip}>Trim</ActionButton>
+        <ActionButton onClick={addTextOverlay}>Text</ActionButton>
+        <ActionButton>Color</ActionButton>
+        <ActionButton>Project</ActionButton>
+        <ActionButton accent onClick={onOpenExport}>
+          Export
+        </ActionButton>
+        {selectedAssetId ? (
+          <ActionButton onClick={() => addImageOverlay(selectedAssetId, { anchor: 'top-right', asLogo: true })}>
+            Logo
+          </ActionButton>
+        ) : null}
+      </div>
+
+      <div className="status-strip">{statusMessage || `${clipCount} clips ready`}</div>
     </header>
   );
 }

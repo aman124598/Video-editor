@@ -1,4 +1,4 @@
-export type AssetType = 'video' | 'image';
+export type AssetType = 'video' | 'image' | 'audio';
 
 export interface Asset {
   id: string;
@@ -15,10 +15,16 @@ export interface Asset {
 export interface Clip {
   id: string;
   assetId: string;
+  trackId: string;
   startTime: number;
   duration: number;
   sourceStart: number;
+  volume: number;
+  playbackRate: number;
+  muted?: boolean;
 }
+
+export type OverlayAnchor = 'free' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export interface OverlayBase {
   id: string;
@@ -29,6 +35,7 @@ export interface OverlayBase {
   width: number;
   height: number;
   opacity: number;
+  anchor: OverlayAnchor;
 }
 
 export interface TextOverlay extends OverlayBase {
@@ -47,7 +54,11 @@ export type Overlay = TextOverlay | ImageOverlay;
 
 export interface TimelineTrack {
   id: string;
-  kind: 'primary' | 'overlay';
+  kind: 'video' | 'audio' | 'titles' | 'effects';
+  label: string;
+  accepts: Array<'clip' | 'image-overlay' | 'text-overlay'>;
+  muteable?: boolean;
+  muted?: boolean;
   clipIds: string[];
 }
 
